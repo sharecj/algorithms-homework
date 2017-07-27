@@ -1,4 +1,5 @@
 #coding=utf8
+import copy
 import random
 
 def create_graph(lines):
@@ -9,36 +10,44 @@ def create_graph(lines):
         graph[start_vertex] = end_vertexs
     return graph
 
+def remove_element(l, e):
+    while True:
+        try:
+            l.remove(e)
+        except:
+            break
+
 def contraction(graph, start_vertex, end_vertex):
-    graph[start_vertex].remove(end_vertex)
-    graph[end_vertex].remove(start_vertex)
     graph[start_vertex].extend(graph[end_vertex])
-    graph[start_vertex] = list(set(graph[start_vertex]))
+
+    # remove self loop
+    remove_element(graph[start_vertex], start_vertex)
+    remove_element(graph[start_vertex], end_vertex)
+
+    # remove edge from end_vertex -> start_vertex
+    remove_element(graph[end_vertex], start_vertex)
+
+    # move edge of end_vertex to start_vertex
     for vertex in graph[end_vertex]:
-        if start_vertex not in graph[vertex]:
-            graph[vertex].append(start_vertex)
+        graph[vertex].append(start_vertex)
         graph[vertex].remove(end_vertex)
     del graph[end_vertex]
+
     # if vertex has no edges, remove it
     if not graph[start_vertex]:
         del graph[start_vertex]
 
 def count_edges(graph):
-    edges = set()
+    sum = 0
     for start_vertex, end_vertexs in graph.items():
-        for end_vertex in end_vertexs:
-            if start_vertex < end_vertex:
-                edges.add((start_vertex, end_vertex))
-            else:
-                edges.add((end_vertex, start_vertex))
-    return len(edges)
+        sum += len(end_vertexs)
+    return int(sum / 2)
 
 def random_contraction(graph):
     init_vertex_count = len(graph)
 
     for i in range(init_vertex_count-2):
         vertex_count = len(graph)
-        print 'vertex count: %s' % vertex_count
 
         # choose random edge
         while True:
@@ -50,8 +59,6 @@ def random_contraction(graph):
         edge_count = len(graph[random_start_vertex])
         random_end_vertex = graph[random_start_vertex][random.randrange(0, edge_count)]
 
-        # remove this edge
-        print '------------------remove: (%s, %s)' % (random_start_vertex, random_end_vertex)
         contraction(graph, random_start_vertex, random_end_vertex)
 
     return count_edges(graph)
@@ -59,5 +66,12 @@ def random_contraction(graph):
 if __name__ == '__main__':
     f = open('kargerMinCut.txt', 'r')
     lines = f.readlines()
+
     graph = create_graph(lines)
-    print random_contraction(graph)
+    min_cut = 99999 
+    for  i in range(1000):
+        cut = random_contraction(copy.deepcopy(graph))
+        print (i, cut)
+        if cut < min_cut:
+            min_cut = cut
+    print(min_cut)
